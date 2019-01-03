@@ -2,12 +2,12 @@
 
 #include "SDL2/SDL.h"
 #include "level.cpp"
-
+#include "const_trig.cpp"
 
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
-#define __DEFAULT_ANGLE_SPEED__ 0.05
+#define __DEFAULT_ANGLE_SPEED__ 10 // 1 does actually mean 0.1 degree
 #define __DEFAULT_STEP_SPEED__ 0.05
 
 class Player {
@@ -17,7 +17,8 @@ class Player {
     bool leave ;
     float x ;
     float y ;
-    float angle, speed_angle, speed_step ;
+    float speed_step ; 
+    int angle, speed_angle ;
     unsigned int** array ;
 
   public:
@@ -59,7 +60,7 @@ class Player {
       return this->y ;
     }
 
-    float get_angle() {
+     int get_angle() {
       return this->angle ;
     }
 
@@ -104,12 +105,18 @@ class Player {
         } // end if
       } // end while loop.
       // Update coordinates.
-      // For now, collision engine is in the Player class but should be moved soon.
+      // /!\ For now, collision engine is in the Player class but should be moved soon.
 
       this->angle += delta_a*this->speed_angle ;
-      new_x = this->x+this->speed_step*cos(this->angle)*delta_s ;
+      if (this->angle < 0) { this->angle += 3600 ; }
+      if (this->angle >= 3600) { this->angle -= 3600 ; }
+
+      //std::cerr << this->angle << std::endl ;
+
+
+      new_x = this->x+this->speed_step*const_trig::fast_cos(this->angle)*delta_s ;
       if (!this->array[(int) this->y][(int) new_x]) { this->x = new_x ;}
-      new_y = this->y+this->speed_step*sin(this->angle)*delta_s ;
+      new_y = this->y+this->speed_step*const_trig::fast_sin(this->angle)*delta_s ;
       if (!this->array[(int) new_y][(int) this->x]) { this->y = new_y ;}
 
 

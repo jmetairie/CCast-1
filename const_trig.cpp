@@ -213,7 +213,7 @@ namespace const_trig {
 #endif
 
 
-#include <time.h>
+/*#include <time.h>
 #include <math.h>
 #include <iostream>
 
@@ -242,4 +242,4 @@ int main() {
 
 
   return 0 ;
-}
+}*/

@@ -18,6 +18,7 @@ int main(int argc, char* argv[])
     Level my_level("level.lvl") ;
     Player my_player(1.5, 1.5) ;
     my_player.set_level(&my_level) ;
+    Ray_engine::init() ; 
 
     if (SDL_Init(SDL_INIT_VIDEO) == 0) {
         SDL_Window* window = NULL;

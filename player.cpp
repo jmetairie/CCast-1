@@ -7,7 +7,7 @@
 #ifndef __PLAYER_H__
 #define __PLAYER_H__
 
-#define __DEFAULT_ANGLE_SPEED__ 10 // 1 does actually mean 0.1 degree
+#define __DEFAULT_ANGLE_SPEED__ 100 // 1 does actually mean 0.1 degree
 #define __DEFAULT_STEP_SPEED__ 0.05
 
 class Player {
@@ -17,7 +17,7 @@ class Player {
     bool leave ;
     float x ;
     float y ;
-    float speed_step ; 
+    float speed_step ;
     int angle, speed_angle ;
     unsigned int** array ;
 

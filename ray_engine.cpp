@@ -8,7 +8,7 @@
 #define PI 3.14159
 #define to_radian(angle) (angle/180.0)*PI
 
-#define __RAY_ENGINE_WALL_HEIGHT__ 1
+#define __RAY_ENGINE_WALL_HEIGHT__ 2
 
 #define DEBUG(val) std::cerr << val << std::endl ;
 
@@ -26,6 +26,9 @@ class Ray_engine {
     static unsigned int angle_step ;
 
     // Engine Inner Variables
+
+    static SDL_Surface * image ;
+    static SDL_Texture * texture ;
 
 
 
@@ -48,14 +51,20 @@ class Ray_engine {
 
 
   public:
-    static void init()
+    static void init(SDL_Renderer* renderer)
     {
       height = 480 ;
       half_height = height >> 1 ;
       width = 640 ;
-      FOV = 1280 ; // 10*FOV/width should be a integer
+      FOV = 640 ; // 10*FOV/width should be a integer
       HALF_FOV = FOV >> 1 ;
       angle_step = FOV/width ;
+
+      /* Textures Loading */
+
+      image = SDL_LoadBMP("media/img/wall_1.bmp");
+      texture = SDL_CreateTextureFromSurface(renderer, image);
+
     }
 
     static void render(SDL_Renderer* renderer, Player* my_player, Level* my_level){
@@ -137,19 +146,19 @@ class Ray_engine {
         /////////////////////////////
         // Distance Computing part //
         /////////////////////////////
-        int x_edge, y_edge ;
+        float x_edge, y_edge ;
         x_ray_length -= length_x_ray_vector ;
         y_ray_length -= length_y_ray_vector ;
         float ray_length ;
         float fisheye_correction = const_trig::fast_cos(abs(angle-player_angle)) ;
         if (x_side) { ray_length = x_ray_length ; } else { ray_length = y_ray_length ; }
+        x_edge =  ((x+x_ray_vector*ray_length)) ;
+        y_edge =  ((y+y_ray_vector*ray_length)) ;
         ray_length *= fisheye_correction ;
-        x_edge = (int) ((x+x_ray_vector*ray_length)*32.0) ;
-        y_edge = (int) ((y+y_ray_vector*ray_length)*32.0) ;
 
-        int wall_height = (int) ((216.0*__RAY_ENGINE_WALL_HEIGHT__)/ray_length) ; wall_height >>=1 ;
-        int y_wall_start = half_height-wall_height ;
-        int y_wall_end = half_height+wall_height ;
+        int wall_height = (int) ((216.0*__RAY_ENGINE_WALL_HEIGHT__)/ray_length) ; //wall_height >>=1 ;
+        int y_wall_start = half_height-(wall_height >>1) ;
+        //int y_wall_end = half_height+wall_height ;
 
         ///////////////////////
         // Jump to next ray  //
@@ -161,9 +170,14 @@ class Ray_engine {
         /////////////////////
         // Rendering Part //
         /////////////////////
-
-        if (x_side) { SDL_SetRenderDrawColor(renderer, 255, 65, 65, SDL_ALPHA_OPAQUE); } else { SDL_SetRenderDrawColor(renderer, 191, 48, 48, SDL_ALPHA_OPAQUE);}
-        SDL_RenderDrawLine(renderer, w, y_wall_start, w, y_wall_end) ;
+        int texture_x ;
+        if (x_side) { texture_x = int((y_edge-int(y_edge))*256) ; } else { texture_x = int((x_edge-int(x_edge))*256) ;}
+        //texture_x = 1 ; // for debug purpose
+        SDL_Rect Source = {texture_x, 0, texture_x, 256} ;
+        SDL_Rect Dest = {w, y_wall_start, 1, wall_height} ;
+        //SDL_BlitSurface(image, &Source, column, &Dest) ;
+        SDL_RenderCopy(renderer, texture, &Source, &Dest) ;
+        //SDL_RenderDrawLine(renderer, w, y_wall_start, w, y_wall_end) ;
       } // end while for ray casting.
 
       SDL_RenderPresent(renderer) ;
@@ -177,3 +191,5 @@ unsigned int Ray_engine::width = 640 ;
 unsigned int Ray_engine::FOV = 960 ;
 unsigned int Ray_engine::HALF_FOV = 480 ;
 unsigned int Ray_engine::angle_step = Ray_engine::FOV/Ray_engine::width ;
+SDL_Surface* Ray_engine::image = NULL ;
+SDL_Texture* Ray_engine::texture = NULL ;

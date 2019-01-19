@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+#include "bitmap.cpp"
+
 #define PI 3.14159
 #define to_radian(angle) (angle/180.0)*PI
 
@@ -29,6 +31,8 @@ class Ray_engine {
 
     static SDL_Surface * image ;
     static SDL_Texture * texture ;
+
+    static unsigned char* floor_surface ;
 
 
 
@@ -59,11 +63,10 @@ class Ray_engine {
       FOV = 640 ; // 10*FOV/width should be a integer
       HALF_FOV = FOV >> 1 ;
       angle_step = FOV/width ;
-
       /* Textures Loading */
-
       image = SDL_LoadBMP("media/img/wall_1.bmp");
       texture = SDL_CreateTextureFromSurface(renderer, image);
+      floor_surface = readBMP("media/img/floor_0.bmp") ;
 
     }
 
@@ -79,7 +82,7 @@ class Ray_engine {
       float y_screen = -const_trig::fast_cos(my_player->get_angle()) ;
       float player_angle = my_player->get_angle() ;
       // display player
-      SDL_SetRenderDrawColor(renderer, 125, 65, 65, SDL_ALPHA_OPAQUE);
+
 
       // (x,y) is the player position on the map array
       float x = my_player->get_x() ;
@@ -132,12 +135,12 @@ class Ray_engine {
           if (x_ray_length < y_ray_length) {
             x_map+= delta_x ;
             x_ray_length += length_x_ray_vector ;
-            x_side = true ;
+            x_side = false ;
           }
           else {
             y_map+= delta_y ;
             y_ray_length += length_y_ray_vector ;
-            x_side = false ;
+            x_side = true ;
           }
           if (x_map < 0 || x_map >= level_width) { hit = true ; }
           else if (y_map < 0 || y_map >= level_height)  { hit = true ;  }
@@ -151,14 +154,14 @@ class Ray_engine {
         y_ray_length -= length_y_ray_vector ;
         float ray_length ;
         float fisheye_correction = const_trig::fast_cos(abs(angle-player_angle)) ;
-        if (x_side) { ray_length = x_ray_length ; } else { ray_length = y_ray_length ; }
+        if (x_side) { ray_length = y_ray_length ; } else { ray_length = x_ray_length ; }
         x_edge =  ((x+x_ray_vector*ray_length)) ;
         y_edge =  ((y+y_ray_vector*ray_length)) ;
         ray_length *= fisheye_correction ;
 
         int wall_height = (int) ((216.0*__RAY_ENGINE_WALL_HEIGHT__)/ray_length) ; //wall_height >>=1 ;
         int y_wall_start = half_height-(wall_height >>1) ;
-        //int y_wall_end = half_height+wall_height ;
+        int y_wall_end = half_height+(wall_height>>1) ;
 
         ///////////////////////
         // Jump to next ray  //
@@ -170,14 +173,35 @@ class Ray_engine {
         /////////////////////
         // Rendering Part //
         /////////////////////
+
+        // Wall Part //
         int texture_x ;
-        if (x_side) { texture_x = int((y_edge-int(y_edge))*256) ; } else { texture_x = int((x_edge-int(x_edge))*256) ;}
-        //texture_x = 1 ; // for debug purpose
-        SDL_Rect Source = {texture_x, 0, texture_x, 256} ;
+        if (x_side) { texture_x = int((x_edge-int(x_edge))*256) ; } else { texture_x = int((y_edge-int(y_edge))*256) ;}
+        SDL_Rect Source = {texture_x, 0, 1, 256} ;
         SDL_Rect Dest = {w, y_wall_start, 1, wall_height} ;
-        //SDL_BlitSurface(image, &Source, column, &Dest) ;
         SDL_RenderCopy(renderer, texture, &Source, &Dest) ;
-        //SDL_RenderDrawLine(renderer, w, y_wall_start, w, y_wall_end) ;
+
+        // Floor //
+
+        //
+        for(unsigned int y_floor=y_wall_end;y_floor<height;y_floor++) {
+          float floor_dist = (1.0*height/((y_floor << 1)-height))/fisheye_correction ; // mettre ces données dans une LUT ?
+          float tmp_x = floor_dist*x_ray_vector+x ;
+          float tmp_y = floor_dist*y_ray_vector+y ;
+          int floor_x = (tmp_x-int(tmp_x))*256 ;
+          int floor_y = (tmp_y-int(tmp_y))*256 ;
+
+          int indx = (floor_y << 8)+floor_x ;
+          indx = (indx << 1) + indx ; // indx*=3
+          //std::cerr << "height " << floor_y << " - " << (floor_y) << " - " << indx << std::endl ;
+          unsigned char r = floor_surface[indx] ;
+          unsigned char g = floor_surface[indx+1] ;
+          unsigned char b = floor_surface[indx+2] ;
+          SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
+          SDL_RenderDrawPoint(renderer, w, y_floor) ;
+        }
+
+
       } // end while for ray casting.
 
       SDL_RenderPresent(renderer) ;
@@ -193,3 +217,4 @@ unsigned int Ray_engine::HALF_FOV = 480 ;
 unsigned int Ray_engine::angle_step = Ray_engine::FOV/Ray_engine::width ;
 SDL_Surface* Ray_engine::image = NULL ;
 SDL_Texture* Ray_engine::texture = NULL ;
+unsigned char* Ray_engine::floor_surface = NULL ;

@@ -27,7 +27,13 @@ class Ray_engine {
     static unsigned int HALF_FOV ;
     static unsigned int angle_step ;
 
-    // Engine Inner Variables
+    // Map
+
+    static unsigned int** map ;
+    static int map_height ;
+    static int map_width ;
+
+    // Display
 
     static SDL_Surface * image ;
     static SDL_Texture * texture ;
@@ -35,55 +41,29 @@ class Ray_engine {
     static unsigned char* floor_surface ;
 
 
-
-
-
-    static void display_grid(SDL_Renderer* renderer, Level* my_level)
-    {
-      SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-      for(int y=0; y<my_level->get_height(); y++)
-      {
-        for(int x=0; x<my_level->get_width(); x++ )
-        {
-          if (my_level->get_array()[y][x]) {
-            SDL_Rect Rect = {(x << 5), (y << 5), 32, 32} ;
-            SDL_RenderFillRect(renderer, &Rect) ;
-          }
-        } // end x loop
-      } // end y loop
-    } // end function
-
-
   public:
-    static void init(SDL_Renderer* renderer)
+    static void init(SDL_Renderer* renderer, Level* level_arg)
     {
-      height = 480 ;
       half_height = height >> 1 ;
-      width = 640 ;
-      FOV = 640 ; // 10*FOV/width should be a integer
       HALF_FOV = FOV >> 1 ;
       angle_step = FOV/width ;
+      /* map part */
+      map = level_arg->get_array() ;
+      map_width = level_arg->get_width() ;
+      map_height = level_arg->get_height() ;
       /* Textures Loading */
       image = SDL_LoadBMP("media/img/wall_1.bmp");
       texture = SDL_CreateTextureFromSurface(renderer, image);
       floor_surface = readBMP("media/img/floor_0.bmp") ;
-
     }
 
-    static void render(SDL_Renderer* renderer, Player* my_player, Level* my_level){
+    static void render(SDL_Renderer* renderer, Player* my_player){
       SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
       SDL_RenderClear(renderer) ;
       SDL_Event event;
-      //display_grid(renderer, my_level) ;
-      // Compute Screen Orientation
-      int level_height = my_level->get_height() ;
-      int level_width = my_level->get_width() ;
       float x_screen = const_trig::fast_sin(my_player->get_angle()) ;
       float y_screen = -const_trig::fast_cos(my_player->get_angle()) ;
       float player_angle = my_player->get_angle() ;
-      // display player
-
-
       // (x,y) is the player position on the map array
       float x = my_player->get_x() ;
       float y = my_player->get_y() ;
@@ -128,9 +108,10 @@ class Ray_engine {
         //////////////////
         // Running DDA //
         /////////////////
-        bool hit = false ; // DEB TODO
+        bool hit = false ;
         bool x_side = false ; // true if ray cross a x-axis in the end.
         int cpt = 0 ;
+        unsigned int tile_type = 0 ;
         while(!hit) { // should be hit variable ;) for debug purpose only.
           if (x_ray_length < y_ray_length) {
             x_map+= delta_x ;
@@ -142,9 +123,9 @@ class Ray_engine {
             y_ray_length += length_y_ray_vector ;
             x_side = true ;
           }
-          if (x_map < 0 || x_map >= level_width) { hit = true ; }
-          else if (y_map < 0 || y_map >= level_height)  { hit = true ;  }
-          else if (my_level->get_array()[y_map][x_map]) { hit = true ;  }
+          if (x_map < 0 || x_map >= map_width) { hit = true ; }
+          else if (y_map < 0 || y_map >= map_height)  { hit = true ;  }
+          else if (map[y_map][x_map]) { hit = true ;  tile_type = map[y_map][x_map] ; }
         }
         /////////////////////////////
         // Distance Computing part //
@@ -168,7 +149,6 @@ class Ray_engine {
         ///////////////////////
         angle += angle_step ;
         if (angle > 3600) { angle -= 3600 ; }
-        //std::cerr << absolute_angle << std::endl ;
 
         /////////////////////
         // Rendering Part //
@@ -210,11 +190,14 @@ class Ray_engine {
 } ;
 
 unsigned int Ray_engine::height = 480 ;
-unsigned int Ray_engine::half_height = 240 ;
+unsigned int Ray_engine::half_height = 120 ;
 unsigned int Ray_engine::width = 640 ;
-unsigned int Ray_engine::FOV = 960 ;
-unsigned int Ray_engine::HALF_FOV = 480 ;
+unsigned int Ray_engine::FOV = 640 ;
+unsigned int Ray_engine::HALF_FOV = 320 ;
 unsigned int Ray_engine::angle_step = Ray_engine::FOV/Ray_engine::width ;
 SDL_Surface* Ray_engine::image = NULL ;
 SDL_Texture* Ray_engine::texture = NULL ;
 unsigned char* Ray_engine::floor_surface = NULL ;
+unsigned int** Ray_engine::map = NULL ;
+int Ray_engine::map_width = 0 ;
+int Ray_engine::map_height = 0 ;

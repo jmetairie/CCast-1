@@ -10,9 +10,9 @@
 #include "SDL2/SDL.h"
 
 
-#include "level.cpp"
-#include "player.cpp"
-#include "ray_engine.cpp"
+#include "level.h"
+#include "player.h"
+#include "ray_engine.h"
 
 
 

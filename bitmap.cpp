@@ -1,4 +1,4 @@
-#include <iostream>
+#include "bitmap.h"
 
 unsigned char* readBMP(const char* filename)
 {
